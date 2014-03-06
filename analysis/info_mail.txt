@@ -1,0 +1,23 @@
+Hi All,
+
+The ultimate goal would be to currently accurately estimate whether different segments of the river meet various water quality standards using available data.
+
+The two relevant standards are the "General Use Water Quality Standards" (which supports swimming) and "Secondary Contact" (which supports canoeing, fishing, and similar recreational acitivities). The standards for both are here: ftp://www.ilga.gov/JCAR/AdminCode/035/03500302sections.html
+
+The most important element of the standards is Fecal Coliform, as shit is the most significant pollutant in Chicago Waterways.
+
+It would be a great first step to build a model that can accurately predict whether Fecal Coliform is below 400, between 400 and 1000, between 1000 and 2000, and above 2000 count/ml.
+
+I would start by throwing the kitchen sink at that problem to see if it can be done at all. If it can, then I would see if can be done using a predictors we can get in close to real time. These predictors would include.
+
+How long it has been since a CSO outfall event
+River levels, river discharge  https://github.com/open-city/chicago-river-sewage/issues/12
+Precipitation
+Air Temperature
+Water Temperature
+Time of Year
+Auto-correlation
+Dissolved Oxygen
+Ph
+Turbidity
+Specific Conductivity

@@ -1,87 +1,97 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import os
+import datetime
+from sklearn import preprocessing, svm, metrics, cross_validation, linear_model
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+from sklearn.pipeline import Pipeline
 
+def read_data(directory='../data/', file='clean-waterway-measurements.csv', file1='cso_events_timestamped.csv', file2='mwrd_rain_measurements.csv',datetosplit='2012-01-01'):
+   data= pd.read_csv(directory+file) 
+   data.replace(to_replace=['<','\*','\'','_____','3..1','n/a','t/x'],value=['','','',np.nan,np.nan,np.nan,np.nan],inplace=True,regex=True)
+   data.replace(to_replace=['na'],value=[np.nan],inplace=True)
+   data['fec_col(cts/100ml)'][np.array(data['fec_col(cts/100ml)'],dtype=float) <200]=1
+   data['fec_col(cts/100ml)'][np.array(data['fec_col(cts/100ml)'],dtype=float) >=400]=0
+   data['fec_col(cts/100ml)'][(np.array(data['fec_col(cts/100ml)'],dtype=float) <400) & (np.array(data['fec_col(cts/100ml)'],dtype=float) >=200)]=1
 
-def mwrd(directory='../data/', file='mwrd_rain_measurements.csv'):
-   data= pd.read_csv(directory+file, na_values='na')
-   print data.shape[0]
-   location= list(set(data.ix[0:,3]))
+   # create train data, take data till datetosplit 
+   data_split= data[data['collect(date)']<datetosplit]
+   # create test data, take data start from datetosplit 
+   data_split_test= data[data['collect(date)']>=datetosplit]
+   #print data.ix[:,30:40][(data['collect(date)']>='2012-07-30') & (data['collect(date)']<'2012-07-31')].fillna(0.0)
+   #exit()
+   return data_split,data_split_test
 
-   lat=['nan',41.824857, 42.079825, 41.821587, 41.734139, 41.659136, 41.894294, 41.912744, 41.721979, 42.075623, 41.970287, 42.019087, 41.735587]    
-   lng=['nan',-87.655586, -87.821792, -87.773094, -87.782139, -87.612606, -87.625152, -87.723944, -87.548275, -87.685299, -87.701213, -87.716341, -87.682604]
+def prepare_data(data):   
+   data_grouped= data.groupby(['north_latitude','west_longitude'])  
+   group={}
+   ct=1
+   data_full, response_full=[],[]
+   for key, val in data_grouped:
+       #print key
+       val=val.fillna(0.0)
+       group[key]=val
+       data2=np.hstack((val.ix[:,1:19],val.ix[:,20:31],val.ix[:,32:52],val.ix[:,53:69]))
+       data_full.append(data2)
+       response_full.extend(list(val.ix[:,31]))
+       #print "---------location= ",ct," done"
+       ct+=1
+   return np.vstack(data_full), response_full 
 
-   latitude,longitude={},{}
-   for key, val in zip(location, lat):
-       latitude[key]=val
-   for key, val in zip(location,lng):
-       longitude[key]= val
-   print len(latitude), len(longitude) 
+def scale_data(train_data, test_data):
+    scaler= preprocessing.MinMaxScaler().fit(train_data)
+    #print scaler.mean_, scaler.std_
+    return scaler.fit_transform(train_data), scaler.transform(test_data)
 
-   coord=np.zeros(shape=(data.shape[0],2))
-   ct=0
-   for loc in data.ix[:,3]:
-      coord[ct,0]=latitude[loc]
-      coord[ct,1]=longitude[loc]
-      ct+=1
-
-   data_new=np.hstack((data.ix[:,:],coord))
-   
-   print data_new.shape
-   np.savetxt(file, data_new,fmt='%s', delimiter=",")
-
-def clean_water(directory='../data/',file='clean-waterway-measurements.csv'):
-    data=pd.read_csv(directory+file, na_values='na')
-    np.savetxt(file, data,fmt='%s', delimiter=",")
-
-def cso(directory='../data/', file='cso_events_timestamped.csv', file1='ssmma_mwrd_merge_cleanedup.csv'):
-    readdata= pd.read_csv(directory+file1, na_values='na')    
-    loc=list(readdata['TARP Connection'])
-    lat=list(readdata['LAT_DEC'])
-    lng=list(readdata['LON_CONV'])
-    latitude,longitude={},{}
-    for key, val in zip(loc, lat):
-       latitude[key]=val
-    for key, val in zip(loc,lng):
-       longitude[key]= val
-    #print len(latitude), len(longitude) 
-    ct=0
-    fw=open('jnk.csv','w')
-    fw1=open('nocoord.csv','w')
-    with open(directory+file,"r") as f:
-      for line in f:
-         lsplit=line.split(",")
-         if len(lsplit)==4 and "(" not in lsplit[0]:
-            try:
-              print>>fw, '%s,%s,%s,%s,%s'%(lsplit[0], lsplit[-2],lsplit[-1], latitude[lsplit[0]],longitude[lsplit[0]])
-              ct+=1
-            except KeyError:
-              print>>fw1, '%s,%s,%s,%s,%s'%(lsplit[0], lsplit[-2],lsplit[-1], 'nan','nan') 
-              ct+=1   
-         if len(lsplit)!=4 and "(" in lsplit[0]: 
-            tmp=line.split("),")[0].split("(")[1].split(",")[0] 
-            try: 
-              print>>fw, '%s,%s,%s,%s,%s'%(tmp,lsplit[-2],lsplit[-1],latitude[tmp],longitude[tmp])
-              ct+=1
-            except KeyError:
-              print>>fw1, '%s,%s,%s,%s,%s'%(tmp,lsplit[-2],lsplit[-1],'nan','nan')
-              ct+=1     
-         if len(lsplit)!=4 and "(" not in lsplit[0]:
-             try:
-               print>>fw, '%s,%s,%s,%s,%s'%(lsplit[0], lsplit[-2],lsplit[-1], latitude[lsplit[0]],longitude[lsplit[0]])
-               ct+=1
-             except KeyError:
-                 print>>fw1, '%s,%s,%s,%s,%s'%(lsplit[0], lsplit[-2],lsplit[-1], 'nan','nan')
-                 ct+=1                
-    print ct                  
-    fw.close()
-    os.system('mv jnk.csv '+ file)
-
-   
-
-          
+def cv_loop(X, y, model, N=8,SEED=25):
+    mean_auc = 0.
+    for i in range(N):
+        X_train, X_cv, y_train, y_cv = cross_validation.train_test_split(
+                                       X, y, test_size=.20, 
+                                       random_state = i*SEED)
+        model.fit(X_train, y_train)
+        preds = model.predict_proba(X_cv)[:,1]
+        auc = metrics.roc_auc_score(y_cv, preds)
+        print "AUC (fold %d/%d): %f" % (i + 1, N, auc)
+        mean_auc += auc
+    return mean_auc/N
 
 if __name__=="__main__":
-    mwrd()
-    cso()
-    clean_water()
+    data,data1=read_data()
+    train_data, train_response=prepare_data(data)
+    test_data,test_response=prepare_data(data1)
+    #train_scaled,test_scaled= scale_data(train_data.astype(float),test_data.astype(float))
+    #model=svm.SVC(probability=True)
+    model=RandomForestClassifier(n_estimators=500, criterion="entropy") 
+    #imp=preprocessing.Imputer(missing_values=0,strategy="median",axis=0)
+    #imp.fit(train_data)
+    #train_imp=imp.transform(train_data)
+    #test_imp=imp.transform(test_data)
+    #Pipeline([("imputer",preprocessing.Imputer(missing_values=0.0,strategy="median",axis=0)),("forest", RandomForestClassifier(n_estimators=500, criterion="entropy"))])
+    #model=ExtraTreesClassifier(n_estimators=500,criterion="entropy")
+    print '---- doing cv now ------------'
+    cv_score= cv_loop(train_data, train_response, model)
+    print 'cv mean AUC score= ',cv_score
+    print '------ fitting full model -------------'
+    model.fit(train_data, train_response)
+    preds=model.predict_proba(test_data)[:,1]
+    #print model.accuracy_score(test_scaled, test_response)
+    print 'test data AUC score= ', metrics.roc_auc_score(test_response, preds)
+    print '------------------------------'
+    print 'entries in test data= ',len(preds)
+    ct=0
+    for pred in preds:
+        #print pred
+        if pred>=0.5: 
+            ct+=1
+    print 'ratio of no of 1s to total test size= ',  float(ct)/len(preds)
+    ct=0      
+    for i in xrange(len(test_response)):
+        #print test_response[i], preds[i]
+        if test_response[i]==1 and preds[i]>=0.5:
+            ct+=1
+        if test_response[i]==0 and preds[i]<0.5:
+            ct+=1  
+    print 'how many predictions match with test data= ',float(ct)/len(test_response)     
+              
