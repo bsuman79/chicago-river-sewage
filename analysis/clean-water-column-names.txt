@@ -1,0 +1,55 @@
+Count of name	
+	Row Labels	Total , full_names
+1	ag	2     silver
+2	alk	1  alkali
+3	as	2
+4	b	2
+5	ba	2
+6	benzene	1
+7	bod	1
+8	ca	2
+9	cbod	1
+10	cd	2
+11	chloroph	1
+12	chlorophyll	1
+13	cl	1
+14	cn	2
+15	collect	1
+16	cr	2
+17	cr6	1
+18	cu	2
+19	do	1
+20	e	1
+21	ethylbenzene	1
+22	f	1
+23	fe	2
+24	fec	1
+25	fog	1
+26	hg	3
+27	m	1
+28	mg	2
+29	mn	2
+30	nh3	1
+31	ni	2
+32	no2+no3	1
+33	o	1
+34	pb	2
+35	ph	1
+36	phenol	1
+37	radiochem	1
+38	sampling	1
+39	se	2
+40	so4	1
+41	ss	1
+42	tds	1
+43	temp	1
+44	time	1
+45	tkn	1
+46	toc	1
+47	toluene	1
+48	tot	1
+49	turb	1
+50	vss	1
+51	xylenes	2
+52	zn	2
+	Grand Total	71

@@ -10,14 +10,15 @@ It would be a great first step to build a model that can accurately predict whet
 
 I would start by throwing the kitchen sink at that problem to see if it can be done at all. If it can, then I would see if can be done using a predictors we can get in close to real time. These predictors would include.
 
-How long it has been since a CSO outfall event
-River levels, river discharge  https://github.com/open-city/chicago-river-sewage/issues/12
-Precipitation
-Air Temperature
-Water Temperature
+How long it has been since a CSO outfall event avai
+River levels,  not avai
+river discharge  https://github.com/open-city/chicago-river-sewage/issues/12 avai
+Precipitation avai
+Air Temperature not found
+Water Temperature 
 Time of Year
-Auto-correlation
-Dissolved Oxygen
+Auto-correlation 
+Dissolved Oxygen 
 Ph
 Turbidity
-Specific Conductivity
+Specific Conductivity not found
